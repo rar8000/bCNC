@@ -2522,12 +2522,18 @@ class Application(Tk, Sender):
             )
         else:
             totalTime = time.time() - startTime
-            loadTime = str(timedelta(seconds=round(totalTime, 2))).rstrip("0")
+            loadTime = self.timeStr(totalTime)
             self.setStatus(_("'{0}' loaded in {1}").format(filename, loadTime))
         self.title(
             f"{Utils.__prg__} {__version__}: {self.gcode.filename} "
             + f"{__platform_fingerprint__}"
         )
+
+    # -----------------------------------------------------------------------
+    def timeStr(self, p_time):
+        time_r = str(timedelta(seconds=round(p_time, 2)))
+        time_r = time_r.rstrip("0") if '.' in time_r else time_r
+        return time_r
 
     # -----------------------------------------------------------------------
     def save(self, filename):
@@ -2600,12 +2606,12 @@ class Application(Tk, Sender):
                 self.refresh(timeout=float(self.canvasFrame.processTime.get()))
             except AlarmException:
                 totalTime = time.time() - startTime
-                loadTime = str(timedelta(seconds=round(totalTime, 2))).rstrip("0")
+                loadTime = self.timeStr(totalTime)
                 self.canvas.status("Timeout importing file. Interrupted. Loading editor... File: {0} in {1}"\
                     .format(filename, loadTime))
             else:
                 totalTime = time.time() - startTime
-                loadTime = str(timedelta(seconds=round(totalTime, 2))).rstrip("0")
+                loadTime = self.timeStr(totalTime)
                 self.canvas.status("Editor loaded. Import File: {0} in {1}".format(filename, loadTime))
             self.canvas.update()
 
@@ -2834,9 +2840,10 @@ class Application(Tk, Sender):
                 if wid.winfo_name().startswith("!userbutton") and wid.name() == self._restart_button:
                     print("Restart Button \"{0}\" commands queued.".format(self._restart_button))
                     for cmd_user in wid.command().split("\n"):
-                        self.queue.put("{0}\n".format(cmd_user))
-                        prefixPaths += [None]
-                        print("Restart Injection: {0}".format(cmd_user))
+                        if cmd_user:
+                            self.queue.put("{0}\n".format(cmd_user))
+                            prefixPaths += [None]
+                            print("Restart Injection: {0}".format(cmd_user))
                     break
         if self._restart_inject:
             if startXYZ:
