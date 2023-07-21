@@ -1,0 +1,66 @@
+Test Plan Outline
+
+  Test Files
+     - New test files in tests/static folder
+     - some files do not have Z position in gcode on purpose
+     - "big" test files may lock zoom on import. Unlock by fit2screen or view change.
+         the initial zoom it too large for scrollbars to handle.
+
+   Test Sections:
+
+     File
+        Test loading and import of files
+        Test process timeout for large files
+           - gcode files have a separate timeout while reading the file, not yet supported for other formats
+           - timeout for processing is supported for all formats
+        Test setting timeouts dynamically. Change timeouts while processing or drawing occuring. 
+        Files:  large_scene.nc         a moderately large scene
+                pajara-boriqua*.nc     very large dither image files for testing timeouts
+                dog-2.5H.gcode         Large Ender 3D printer file taken from thingiverse (thing:4671526)
+
+     Canvas buttons
+        overlap - enabled/active paths should be drawn over inactive/disabled
+        Raise each element to the top of canvas (grid, margins, probe), refresh will lower again.
+        test each button on ribbon
+        test config button and options
+            -- Advanced block color needs a restart to show/hide buttons (trim margins, filter inactive)
+        test each view
+        test shortcut keys
+        test shift click. Shift-ctrl-click
+        Files:  large_scene.nc         a moderately large scene
+                pajara-boriqua*.nc     very large dither image files for testing timeouts
+                oneline.nc             test edge case of one motion command
+                twoline.nc             test edge case of two motion commands
+                seed_*layer_color.nc   test overlap render. Printable on laser. No Z commands.
+                tinystar20.nc          small gcode to import test. No Z commands.
+                dog-2.5H.gcode         Ender 3D printer file taken from thingiverse (thing:4671526)
+                big*.nc                test extreme zooms and work areas
+
+     Editor (List)
+        expand and enable should not change selection
+           * Test with no selection
+           * one selected
+           * some selected
+           * all selection
+           * mix of full blocks and expanded selection
+           ***Clicking too fast could cause unintented behavior.
+        test reprocessing occurs when toggling or moving (up/down/invert) in the list
+        test selecting on block name
+        test shift click. Shift-ctrl-click
+        test each button on ribbon
+            - toggling no selection should not reprocess
+            - test Recoloring
+        Files: Seed_tile.nc   is the main test file
+
+     CAM
+        test Config->Canvas settings
+            - ensure button allows canvas colors to be changed without restart
+        test Config->Colors
+            - ensure button allows canvas colors to be changed without restart
+        test other CAM functions to ensure compatibility
+
+     Control
+        Test resume. Test Z value is preserved. Open file where 2nd block Z value depends on 1st block. resume on 2nd block
+        Files:  seed_tile.nc                main test file to test job resume. 
+                assorted_small.nc           test 3D resume of jobs
+           

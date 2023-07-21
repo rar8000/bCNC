@@ -5,7 +5,7 @@ import subprocess
 import time
 import unittest
 
-import imageio
+import imageio.v2 as imageio
 import pyautogui
 import requests
 
@@ -36,7 +36,7 @@ class BaseGUITestCase(unittest.TestCase):
                 self.get_python_path(),
                 os.path.join(
                     self.build_dir,
-                    "bCNC",
+                    "./",
                     "bCNC.py",
                 ),
                 "--fullscreen",
@@ -106,7 +106,7 @@ class BaseGUITestCase(unittest.TestCase):
         self.grbl_proc.send_signal(signal.SIGINT)
 
     def get_bcnc_state(self):
-        return requests.get("http://127.0.0.1:5001/state").json()
+        return requests.get("http://127.0.0.1:8080/state").json()
 
     def get_static_path(self, filename):
         return os.path.join(
