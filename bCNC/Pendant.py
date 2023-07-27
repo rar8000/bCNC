@@ -118,10 +118,11 @@ class Pendant(httpserver.BaseHTTPRequestHandler):
             if arg is None:
                 return
             filename = os.path.join(iconpath, arg["name"] + ".gif")
-            self.do_HEAD(200, content="image/gif",
-                         cl=os.path.getsize(filename))
             try:
                 f = open(filename, "rb")
+                f.seek(0,2)
+                self.do_HEAD(200, content="image/gif", cl=f.tell())
+                f.seek(0,0)
                 self.wfile.write(f.read())
                 f.close()
             except Exception:
@@ -140,19 +141,16 @@ class Pendant(httpserver.BaseHTTPRequestHandler):
                     with tempfile.NamedTemporaryFile(suffix=".gif") as out:
                         Image.open(tmp.name).save(out.name, "GIF")
                         out.flush()
+                        self.do_HEAD(200, content="image/gif", cl=out.tell())
                         out.seek(0)
-                        self.do_HEAD(
-                            200,
-                            content="image/gif",
-                            cl=os.path.getsize(tmp.name)
-                        )
                         self.wfile.write(out.read())
                 except Exception:
                     filename = os.path.join(iconpath, "warn.gif")
-                    self.do_HEAD(200, content="image/gif",
-                                 cl=os.path.getsize(filename))
                     try:
                         f = open(filename, "rb")
+                        f.seek(0,2)
+                        self.do_HEAD(200, content="image/gif", cl=f.tell())
+                        f.seek(0,0)
                         self.wfile.write(f.read())
                         f.close()
                     except Exception:
@@ -167,11 +165,11 @@ class Pendant(httpserver.BaseHTTPRequestHandler):
 
             if Pendant.camera.read():
                 Pendant.camera.save("camera.jpg")
-                self.do_HEAD(
-                    200, content="image/jpeg", cl=os.path.getsize("camera.jpg")
-                )
                 try:
                     f = open("camera.jpg", "rb")
+                    f.seek(0,2)
+                    self.do_HEAD(200, content="image/jpeg", cl=f.tell())
+                    f.seek(0,0)
                     self.wfile.write(f.read())
                     f.close()
                 except Exception:
@@ -181,23 +179,39 @@ class Pendant(httpserver.BaseHTTPRequestHandler):
 
     # ----------------------------------------------------------------------
     def deal_post_data(self):
-        boundary = self.headers.plisttext.split("=")[1]
+        str_ok = True
+        b_tmp = False
+        try:
+            boundary = self.headers.plisttext.split("=")[1]
+        except:
+            str_ok=False
+            boundary=self.headers.get_boundary()
+            pass
         remainbytes = int(self.headers["content-length"])
         line = self.rfile.readline()
         remainbytes -= len(line)
-        if boundary not in line:
-            return (False, "Content NOT begin with boundary")
+        if (str_ok):
+            b_tmp = not boundary in line
+        else:
+            b_tmp = not boundary.encode() in line
+        if b_tmp:
+                return (False, "Content NOT begin with boundary")
         line = self.rfile.readline()
         remainbytes -= len(line)
-        fn = re.findall(
-            r'Content-Disposition.*name="file"; filename="(.*)"', line)
+        if (str_ok):
+            fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"', line)
+        else:
+            fn = re.findall(r'Content-Disposition.*name="file"; filename="(.*)"'.encode(), line)
         if not fn:
             return (False, "Can't find out file name...")
         path = os.path.expanduser("~")
         path = os.path.join(path, "bCNCUploads")
         if not os.path.exists(path):
             os.makedirs(path)
-        fn = os.path.join(path, fn[0])
+        if (str_ok):
+            fn = os.path.join(path, fn[0])
+        else:
+            fn = os.path.join(path.encode(), fn[0])
         line = self.rfile.readline()
         remainbytes -= len(line)
         line = self.rfile.readline()
@@ -215,13 +229,20 @@ class Pendant(httpserver.BaseHTTPRequestHandler):
         while remainbytes > 0:
             line = self.rfile.readline()
             remainbytes -= len(line)
-            if boundary in line:
+            if (str_ok):
+                b_tmp= boundary in line
+            else:
+                b_tmp= boundary.encode() in line
+            if b_tmp:
                 preline = preline[0:-1]
-                if preline.endswith("\r"):
+                if preline.endswith("\r".encode()):
                     preline = preline[0:-1]
                 out.write(preline)
                 out.close()
-                return (True, f"{fn}")
+                if (str_ok):
+                    return (True, "%s" % fn)
+                else:
+                    return (True, fn)
             else:
                 out.write(preline)
                 preline = line
